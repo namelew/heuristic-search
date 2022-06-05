@@ -3,7 +3,7 @@ from random import randint
 import time
 
 # crinado matrix de adjacencia com as cidades do Saara Oeste
-instancia = open('../Instancias/western-sahara.tsp')
+instancia = open("../Diogo-Cunha/Instâncias-Origin/'Western Sahara'.tsp")
 conjunto = []
 grafo = []
 

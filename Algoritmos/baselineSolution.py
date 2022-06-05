@@ -45,7 +45,7 @@ def dijkstraMinorPath(grafo, inicio):
     return path, nodos
 
 # crinado matrix de adjacencia com as cidades do Saara Oeste
-instancia = open('../Instancias/argentina.tsp')
+instancia = open('../Diogo-Cunha/Instâncias/argentina.tsp')
 conjunto = []
 grafo = []
 

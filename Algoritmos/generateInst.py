@@ -1,4 +1,5 @@
 from scipy.spatial import distance
+import numpy as np
 import sys
 
 files = []
@@ -26,9 +27,4 @@ for file in files:
         grafo.append(node)
     
     name = "../Diogo-Cunha/Instâncias/"+file+".bin"
-    wfile = open(name, "wb")
-    for node in grafo:
-        for vertex in node:
-            buffer = bytearray(int(vertex))
-            wfile.write(buffer)
-    wfile.close()
+    np.array(grafo).tofile(name)

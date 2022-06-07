@@ -129,6 +129,6 @@ dmypy.json
 .pyre/
 
 # output
-.csv
-.zip
-.rar
+*.csv
+*.zip
+*.rar

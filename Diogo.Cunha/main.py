@@ -4,6 +4,8 @@ from datetime import datetime
 import pandas as pd
 import sys
 
+from sqlalchemy import false
+
 class OutputInstancia: # classe par aorganizar os dados de saida
     def __init__(self, name):
         self.name = name
@@ -21,7 +23,7 @@ class OutputInstancia: # classe par aorganizar os dados de saida
         variacy = 0
         for solution in self.solutions:
             variacy += (solution - mean) ** 2
-        return round((variacy/tam) ** 1/2, 2)
+        return round((variacy/tam) ** 0.5, 2)
     def avgT(self): # retorna t-medio
         tam = len(self.time)
         sum = 0
@@ -79,12 +81,12 @@ for i in range(len(files)):
 
 dist_to_csv = {
     "instancia": [data.name for data in output],
-    "autoria": ["Diogo Cunha" for i in range(len(output))],
+    "autoria": ["Diogo.Cunha" for i in range(len(output))],
     "algoritmo": ["BTA" for i in range(len(output))],
-    "q-medio": [data.avgQ() for data in output],
+    "q-medio": [int(data.avgQ()) for data in output],
     "q-desvio": [data.dispersionQ() for data in output],
-    "t-medio": [data.avgT() for data in output]
+    "t-medio": [int(data.avgT()) for data in output]
 }
 
 dataframe = pd.DataFrame(dist_to_csv)
-dataframe.to_csv('resultados.csv')
+dataframe.to_csv('resultados.csv', index=False)

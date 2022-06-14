@@ -2,6 +2,7 @@ import numpy as np
 from random import randint
 from datetime import datetime
 import pandas as pd
+import sys
 
 class OutputInstancia: # classe par aorganizar os dados de saida
     def __init__(self, name):
@@ -53,6 +54,7 @@ for i in range(len(files)):
 
     for max in range(10):
         start = datetime.now()
+        custo_min = sys.maxsize
         # gera um caminho ciclico aleatório sem repetir vertices
         while abs(start.second - datetime.now().second) < createInterval(tam):
             solucao = []
@@ -69,7 +71,8 @@ for i in range(len(files)):
                 solucao.append(aresta)
                 
                 aux = proximo           
-            output[i].solutions.append(custo)
+            if custo < custo_min:           
+                output[i].solutions.append(custo)
         output[i].time.append(abs(start.second-datetime.now().second))
     print(f"Instancia {i} finalizou")
 

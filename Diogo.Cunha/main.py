@@ -1,10 +1,7 @@
 import numpy as np
-from random import randint
+from random import shuffle
 from datetime import datetime
 import pandas as pd
-import sys
-
-from sqlalchemy import false
 
 class OutputInstancia: # classe par aorganizar os dados de saida
     def __init__(self, name):
@@ -34,6 +31,24 @@ class OutputInstancia: # classe par aorganizar os dados de saida
 def createInterval(n): # retorna por quantos segundos uma instância será executada
     return round((n * 60)/1000, 0)
 
+# param(array, preview_value, after_value, new_index)
+def shiffElement(array, preview, after, new):
+    idn = new
+    new = array[idn]
+
+    array.pop(idn)
+
+    preview = array.index(preview)
+    after = array.index(after)
+
+    aux_prev = array[:preview+1]
+    aux_after = array[after:]
+
+    aux_after.insert(0, new)
+    aux_prev.extend(aux_after)
+
+    return aux_prev
+
 instancias = []
 files = ["Djibouti",  "Qatar",  "Uruguay",  "Zimbabwe", "Western Sahara"]
 li = [38, 194, 734, 929, 29] # tamanho de cada uma das instâncias
@@ -53,40 +68,35 @@ for i in range(len(files)):
     inicio = 0
     tam = len(instancias[i])
     output.append(OutputInstancia(files[i]))
+    seed = [i for i in range(tam)]
 
     for max in range(10):
+        custo_min = 0
+        # generate seed
+        shuffle(seed)
+        # get initial custo_min
+        for j in range(tam):
+            if j < tam - 1:
+                k = j + 1
+            else:
+                k = tam - j
+            custo_min += instancias[i][seed[j]][seed[k]]
         start = datetime.now()
-        custo_min = sys.maxsize
         # gera um caminho ciclico aleatório sem repetir vertices
         while abs(start.second - datetime.now().second) < createInterval(tam):
-            solucao = []
-            aux = inicio
-            custo = 0
-            for node in range(tam):
-                proximo = randint(0, tam - 1)
-                
-                if len(solucao) == 28:
-                    aresta = (aux, inicio)
-                else:
-                    aresta = (aux, proximo)
-                custo += instancias[i][aresta[0]][aresta[1]]
-                solucao.append(aresta)
-                
-                aux = proximo
-            if custo < custo_min:           
-                output[i].solutions.append(custo)
+            ...
         output[i].time.append(abs(start.second-datetime.now().second))
 
 # gera a saída no arquivo resultados.csv
 
-dist_to_csv = {
-    "instancia": [data.name for data in output],
-    "autoria": ["Diogo.Cunha" for i in range(len(output))],
-    "algoritmo": ["BTA" for i in range(len(output))],
-    "q-medio": [int(data.avgQ()) for data in output],
-    "q-desvio": [data.dispersionQ() for data in output],
-    "t-medio": [int(data.avgT()) for data in output]
-}
+# dist_to_csv = {
+#     "instancia": [data.name for data in output],
+#     "autoria": ["Diogo.Cunha" for i in range(len(output))],
+#     "algoritmo": ["BLPMsh" for i in range(len(output))],
+#     "q-medio": [int(data.avgQ()) for data in output],
+#     "q-desvio": [data.dispersionQ() for data in output],
+#     "t-medio": [int(data.avgT()) for data in output]
+# }
 
-dataframe = pd.DataFrame(dist_to_csv)
-dataframe.to_csv('resultados.csv', index=False)
+# dataframe = pd.DataFrame(dist_to_csv)
+# dataframe.to_csv('resultados.csv', index=False)

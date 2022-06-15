@@ -3,7 +3,7 @@ from random import shuffle
 from datetime import datetime
 import pandas as pd
 
-class OutputInstancia: # classe par aorganizar os dados de saida
+class OutputInstancia: # classe par a organizar os dados de saida
     def __init__(self, name):
         self.name = name
         self.solutions = []
@@ -49,6 +49,18 @@ def shiffElement(array, preview, after, new):
 
     return aux_prev
 
+# get the custo of current solution
+def getCusto(instancia, solution):
+    custo = 0
+    tam = len(solution)
+    for j in range(tam):
+        if j < tam - 1:
+            k = j + 1
+        else:
+            k = tam - j
+        custo += instancia[solution[j]][solution[k]]
+    return int(custo)
+
 instancias = []
 files = ["Djibouti",  "Qatar",  "Uruguay",  "Zimbabwe", "Western Sahara"]
 li = [38, 194, 734, 929, 29] # tamanho de cada uma das instâncias
@@ -71,32 +83,44 @@ for i in range(len(files)):
     seed = [i for i in range(tam)]
 
     for max in range(10):
-        custo_min = 0
         # generate seed
         shuffle(seed)
         # get initial custo_min
-        for j in range(tam):
-            if j < tam - 1:
-                k = j + 1
-            else:
-                k = tam - j
-            custo_min += instancias[i][seed[j]][seed[k]]
+        custo_min = getCusto(instancias[i], seed)
         start = datetime.now()
-        # gera um caminho ciclico aleatório sem repetir vertices
-        while abs(start.second - datetime.now().second) < createInterval(tam):
-            ...
+        timeout = False
+        tries = 0
+        # gera um caminho ciclico a partir de uma vizinhança gerada por shift
+        for j in range(1, tam - 1):
+            isMaxLocal = True
+            for k in range(1, tam - 1):
+                if j != k:
+                    result = shiffElement(seed, seed[k - 1], seed[k], j)
+                    custo = getCusto(instancias[i], result)
+                    if custo < custo_min:
+                        isMaxLocal = False
+                        tries = 0
+                        custo_min = custo
+                if abs(start.second - datetime.now().second) < createInterval(tam):
+                    timeout = True
+                    break
+            if isMaxLocal:
+                tries += 1
+            if timeout or tries >= 3:
+                break
         output[i].time.append(abs(start.second-datetime.now().second))
+        output[i].solutions.append(custo_min)
 
 # gera a saída no arquivo resultados.csv
 
-# dist_to_csv = {
-#     "instancia": [data.name for data in output],
-#     "autoria": ["Diogo.Cunha" for i in range(len(output))],
-#     "algoritmo": ["BLPMsh" for i in range(len(output))],
-#     "q-medio": [int(data.avgQ()) for data in output],
-#     "q-desvio": [data.dispersionQ() for data in output],
-#     "t-medio": [int(data.avgT()) for data in output]
-# }
+dist_to_csv = {
+    "instancia": [data.name for data in output],
+    "autoria": ["Diogo.Cunha" for i in range(len(output))],
+    "algoritmo": ["BLPMsh" for i in range(len(output))],
+    "q-medio": [int(data.avgQ()) for data in output],
+    "q-desvio": [data.dispersionQ() for data in output],
+    "t-medio": [int(data.avgT()) for data in output]
+}
 
-# dataframe = pd.DataFrame(dist_to_csv)
-# dataframe.to_csv('resultados.csv', index=False)
+dataframe = pd.DataFrame(dist_to_csv)
+dataframe.to_csv('resultados.csv', index=False)

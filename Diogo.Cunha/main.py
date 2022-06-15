@@ -88,16 +88,16 @@ for i in range(len(files)):
         # get initial custo_min
         custo_min = getCusto(instancias[i], seed)
         start = datetime.now()
-        timeout = False
-        tries = 0
+        timeout = False # break the second loop
+        tries = 0 # 3 trys control
         # gera um caminho ciclico a partir de uma vizinhança gerada por shift
         for j in range(1, tam - 1):
-            isMaxLocal = True
+            isMaxLocal = True # check if algorithm is in a max local
             for k in range(1, tam - 1):
                 if j != k:
                     result = shiffElement(seed, seed[k - 1], seed[k], j)
                     custo = getCusto(instancias[i], result)
-                    if custo < custo_min:
+                    if custo < custo_min: # grands fists enchanment
                         isMaxLocal = False
                         tries = 0
                         custo_min = custo

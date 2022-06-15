@@ -80,16 +80,15 @@ for i in range(len(files)):
     inicio = 0
     tam = len(instancias[i])
     output.append(OutputInstancia(files[i]))
-    seed = [i for i in range(tam)]
 
     for max in range(10):
         # generate seed
+        seed = [i for i in range(tam)]
         shuffle(seed)
         # get initial custo_min
         custo_min = getCusto(instancias[i], seed)
         start = datetime.now()
         timeout = False # break the second loop
-        tries = 0 # 3 trys control
         # gera um caminho ciclico a partir de uma vizinhança gerada por shift
         for j in range(1, tam - 1):
             isMaxLocal = True # check if algorithm is in a max local
@@ -99,14 +98,11 @@ for i in range(len(files)):
                     custo = getCusto(instancias[i], result)
                     if custo < custo_min: # grands fists enchanment
                         isMaxLocal = False
-                        tries = 0
                         custo_min = custo
                 if abs(start.second - datetime.now().second) < createInterval(tam):
                     timeout = True
                     break
-            if isMaxLocal:
-                tries += 1
-            if timeout or tries >= 3:
+            if timeout or isMaxLocal:
                 break
         output[i].time.append(abs(start.second-datetime.now().second))
         output[i].solutions.append(custo_min)

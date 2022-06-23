@@ -1,9 +1,7 @@
-from os import curdir
 import numpy as np
 from random import shuffle
-from datetime import datetime
+from time import time
 import pandas as pd
- 
 class OutputInstancia: # classe par a organizar os dados de saida
     def __init__(self, name):
         self.name = name
@@ -31,7 +29,6 @@ class OutputInstancia: # classe par a organizar os dados de saida
 
 def createInterval(n): # retorna por quantos segundos uma instância será executada
     return round((n * 60)/1000, 0)
- 
 # param(array, preview_value, after_value, new_index)
 def shiffElement(array, preview, after, new):
     if after == array[new] or preview == array[new]:
@@ -51,7 +48,6 @@ def shiffElement(array, preview, after, new):
     aux_prev.extend(aux_after)
 
     return aux_prev
- 
 # get the custo of current solution
 def getCusto(instancia, solution):
     custo = 0
@@ -64,11 +60,17 @@ def getCusto(instancia, solution):
         custo += instancia[solution[j]][solution[k]]
     return int(custo)
  
+def copy(array):
+    cp = []
+ 
+    for v in array:
+        cp.append(v)
+    return cp
+ 
 instancias = []
 files = ["Djibouti",  "Qatar",  "Uruguay",  "Zimbabwe", "Western Sahara"]
 li = [38, 194, 734, 929, 29] # tamanho de cada uma das instâncias
 output = []
- 
 for file in files: # carregando a matrix de adjacência
     array = np.fromfile("Instâncias/"+file+".bin")
     temp = array.tolist()
@@ -77,52 +79,54 @@ for file in files: # carregando a matrix de adjacência
     for i in range(len(temp)):
         graph[i%li[pos]].append(temp[i])
     instancias.append(graph)
- 
 # main
 for i in range(len(files)):
     tam = len(instancias[i])
     output.append(OutputInstancia(files[i]))
-    
+    print(f"Starting {output[i].name}")
+  
     for max in range(10):
         # generate seed
         seed = [i for i in range(tam)]
-        interaction = 0
         shuffle(seed)
         # get initial custo_min
         custo_min = getCusto(instancias[i], seed)
-        start = datetime.now()
+        start = time()
+        melhora = 0
+        isMinLocal = False # check if algorithm is in a min local
         timeout = False # break the second loop
         # gera um caminho ciclico a partir de uma vizinhança gerada por shift
-        j = 1
-        while(j < tam):
-            isMaxLocal = False # check if algorithm is in a max local
-            for k in range(j, tam):
-                interaction += 1
-                aux = seed.copy()
-                seed = shiffElement(seed, seed[k - 1], seed[k], j)
-                custo = getCusto(instancias[i], seed)
-                if abs(start.second - datetime.now().second) > createInterval(tam):
-                    timeout = True
-                    break
-                if custo == custo_min:
-                    isMaxLocal = False
-                    j += 1
-                    continue
-                if custo > custo_min: # check if the got wost then before
-                    seed = aux
-                    isMaxLocal = True
+        while (not isMinLocal):
+            j = 1
+            while(j < tam):
+                isMinLocal = False # check if algorithm is in a min local
+                for k in range(j, tam):
+                    aux = copy(seed)
+                    seed = shiffElement(seed, seed[k - 1], seed[k], j)
+                    custo = getCusto(instancias[i], seed)
+                    if abs(start - time()) > createInterval(tam):
+                        timeout = True
+                        break
+                    if custo == custo_min:
+                        isMinLocal = True
+                        continue
+                    if custo > custo_min: # check if the got wost then before
+                        seed = aux
+                        isMinLocal = True
+                        continue
+                    melhora += custo_min - custo
                     custo_min = custo
-                    j += 1
-                    continue
-                j = 1
-                break
-            if timeout or isMaxLocal:
-                break
-        output[i].time.append(abs(start.second-datetime.now().second))
+                    isMinLocal = False
+                    j = 1
+                    break
+                if timeout or isMinLocal:
+                    isMinLocal = True
+                    break
+                j += 1
+        print(f"Time: {abs(start-time())} Melhora: {melhora}")
+        output[i].time.append(abs(start-time()))
         output[i].solutions.append(custo_min)
- 
 # gera a saída no arquivo resultados.csv
- 
 dist_to_csv = {
     "instancia": [data.name for data in output],
     "autoria": ["Diogo.Cunha" for i in range(len(output))],
@@ -131,6 +135,5 @@ dist_to_csv = {
     "q-desvio": [f"{data.dispersionQ():.02f}" for data in output],
     "t-medio": [int(data.avgT()) for data in output]
 }
- 
 dataframe = pd.DataFrame(dist_to_csv)
 dataframe.to_csv('resultados.csv', index=False)

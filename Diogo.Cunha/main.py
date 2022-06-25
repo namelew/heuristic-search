@@ -92,14 +92,13 @@ for i in range(len(files)):
         # get initial custo_min
         custo_min = getCusto(instancias[i], seed)
         start = time()
-        melhora = 0
         isMinLocal = False # check if algorithm is in a min local
         timeout = False # break the second loop
         # gera um caminho ciclico a partir de uma vizinhança gerada por shift
         while (not isMinLocal):
             j = 1
             while(j < tam):
-                isMinLocal = False # check if algorithm is in a min local
+                changeNeibor = False
                 for k in range(j, tam):
                     aux = copy(seed)
                     seed = shiffElement(seed, seed[k - 1], seed[k], j)
@@ -108,22 +107,20 @@ for i in range(len(files)):
                         timeout = True
                         break
                     if custo == custo_min:
-                        isMinLocal = True
+                        seed = aux
                         continue
                     if custo > custo_min: # check if the got wost then before
                         seed = aux
-                        isMinLocal = True
                         continue
-                    melhora += custo_min - custo
                     custo_min = custo
-                    isMinLocal = False
+                    changeNeibor = True
                     j = 1
                     break
                 if timeout or isMinLocal:
                     isMinLocal = True
                     break
-                j += 1
-        print(f"Time: {abs(start-time())} Melhora: {melhora}")
+                if not changeNeibor:
+                    j += 1
         output[i].time.append(abs(start-time()))
         output[i].solutions.append(custo_min)
 # gera a saída no arquivo resultados.csv

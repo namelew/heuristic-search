@@ -1,5 +1,5 @@
 import numpy as np
-from random import shuffle
+from random import randint, shuffle
 from time import time
 import pandas as pd
 class OutputInstancia: # classe par a organizar os dados de saida
@@ -27,6 +27,14 @@ class OutputInstancia: # classe par a organizar os dados de saida
             sum += solution
         return round(sum/tam, 0)
 
+class Tabu:
+    def __init__(self, tabu, tern):
+        self.tabu = tabu
+        self.tern = tern
+    def reduce(self):
+        self.tern -= 1
+    def __str__(self):
+        return f"({self.tabu}, {self.tern})"
 def createInterval(n): # retorna por quantos segundos uma instância será executada
     return round((n * 60)/1000, 0)
 # param(array, preview_value, after_value, new_index)
@@ -62,11 +70,33 @@ def getCusto(instancia, solution):
  
 def copy(array):
     cp = []
- 
     for v in array:
         cp.append(v)
     return cp
- 
+
+def isTabu(tabus, key):
+    for tabu in tabus:
+        if tabu.tabu[0] == key[0] and tabu.tabu[1] == key[1]:
+            return True
+    return False
+
+def clipTabu(tabus):
+    if len(tabus) == 0:
+        return
+    
+    for tabu in tabus:
+        tabu.reduce()
+
+    for i in range(len(tabus)):
+        if tabus[i].tern <= 0:
+            tabus[i] = 0
+    
+    while (0 in tabus):
+        tabus.remove(0)
+
+def ternure(n):
+    return round(n/5)
+
 instancias = []
 files = ["Djibouti",  "Qatar",  "Uruguay",  "Zimbabwe", "Western Sahara"]
 li = [38, 194, 734, 929, 29] # tamanho de cada uma das instâncias
@@ -89,45 +119,50 @@ for i in range(len(files)):
         # generate seed
         seed = [i for i in range(tam)]
         shuffle(seed)
-        # get initial custo_min
-        custo_min = getCusto(instancias[i], seed)
         start = time()
-        isMinLocal = False # check if algorithm is in a min local
         timeout = False # break the second loop
+        best = getCusto(instancias[i], seed)
+        tabus = []
         # gera um caminho ciclico a partir de uma vizinhança gerada por shift
-        while (not isMinLocal):
+        while (not timeout):
             j = 1
             while(j < tam):
                 changeNeibor = False
                 for k in range(j, tam):
-                    aux = copy(seed)
-                    seed = shiffElement(seed, seed[k - 1], seed[k], j)
-                    custo = getCusto(instancias[i], seed)
                     if abs(start - time()) > createInterval(tam):
                         timeout = True
                         break
-                    if custo == custo_min:
-                        seed = aux
-                        continue
-                    if custo > custo_min: # check if the got wost then before
-                        seed = aux
-                        continue
-                    custo_min = custo
-                    changeNeibor = True
-                    j = 1
-                    break
-                if timeout or isMinLocal:
-                    isMinLocal = True
+                    if not isTabu(tabus,(j,k)):
+                        seed = shiffElement(seed, seed[k - 1], seed[k], j)
+                        custo = getCusto(instancias[i], seed)
+                        best = custo if custo < best else best
+                        changeNeibor = True
+                        j = 1
+                        tabus.append(Tabu((j,k), ternure(tam)))
+                        break
+                    else:
+                        aux = copy(seed)
+                        seed = shiffElement(seed, seed[k - 1], seed[k], j)
+                        custo = getCusto(instancias[i], seed)
+                        if custo < best:
+                            custo_min = custo
+                            changeNeibor = True
+                            break
+                        else:
+                            seed = aux
+                            continue
+                if timeout:
                     break
                 if not changeNeibor:
                     j += 1
+                    clipTabu(tabus)
         output[i].time.append(abs(start-time()))
-        output[i].solutions.append(custo_min)
+        output[i].solutions.append(best)
 # gera a saída no arquivo resultados.csv
 dist_to_csv = {
     "instancia": [data.name for data in output],
     "autoria": ["Diogo.Cunha" for i in range(len(output))],
-    "algoritmo": ["BLPMsh" for i in range(len(output))],
+    "algoritmo": ["BTsh" for i in range(len(output))],
     "q-medio": [int(data.avgQ()) for data in output],
     "q-desvio": [f"{data.dispersionQ():.02f}" for data in output],
     "t-medio": [int(data.avgT()) for data in output]

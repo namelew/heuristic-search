@@ -31,7 +31,7 @@ class Tabu:
     def __init__(self, tabu:tuple, tern:int):
         self.tabu = tabu
         self.tern = tern
-    def reduce(self):
+    def reduce(self): # reduz o mandato do tabu
         self.tern -= 1
     def __str__(self):
         return f"({self.tabu}, {self.tern})"
@@ -71,7 +71,7 @@ def isTabu(tabus:list, key:tuple):
             return True
     return False
 
-def clipTabu(tabus:list):
+def clipTabu(tabus:list): # função que reduz o mandato de todos os tabus e remove os coom mandato 0
     if len(tabus) == 0:
         return
     
@@ -85,7 +85,7 @@ def clipTabu(tabus:list):
     while (0 in tabus):
         tabus.remove(0)
 
-def ternure(n:int):
+def ternure(n:int): # retorna o mandato do tabu
     return round(n/5)
 
 instancias = []
@@ -112,7 +112,7 @@ for i in range(len(files)):
         shuffle(seed)
         start = time()
         timeout = False # break the second loop
-        best = getCusto(instancias[i], seed)
+        current = getCusto(instancias[i], seed)
         tabus = []
         # gera um caminho ciclico a partir de uma vizinhança gerada por shift
         while (not timeout):
@@ -128,15 +128,15 @@ for i in range(len(files)):
                     shiffElement(seed, k, j)
                     custo = getCusto(instancias[i], seed)
 
-                    if not isTabu(tabus,(j,k)):
-                        best = custo if custo < best else best
+                    if not isTabu(tabus,(seed[j],seed[k])): # verifica se a troca é ou não um tabu
+                        clipTabu(tabus)
+                        current = custo
                         changeNeibor = True
-                        j = 1
-                        tabus.append(Tabu((j,k), ternure(tam)))
+                        tabus.append(Tabu((seed[j],seed[k]), ternure(tam)))
                         break
                     else:
-                        if custo < best:
-                            custo_min = custo
+                        if custo < current: # aspiração: muda se melhorar
+                            current = custo
                             changeNeibor = True
                             break
                         else:
@@ -146,9 +146,10 @@ for i in range(len(files)):
                     break
                 if not changeNeibor:
                     j += 1
-                    clipTabu(tabus)
+                else:
+                    break
         output[i].time.append(abs(start-time()))
-        output[i].solutions.append(best)
+        output[i].solutions.append(current)
 # gera a saída no arquivo resultados.csv
 dist_to_csv = {
     "instancia": [data.name for data in output],

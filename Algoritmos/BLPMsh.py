@@ -27,29 +27,20 @@ class OutputInstancia: # classe par a organizar os dados de saida
             sum += solution
         return round(sum/tam, 0)
 
-def createInterval(n): # retorna por quantos segundos uma instância será executada
+def createInterval(n:int): # retorna por quantos segundos uma instância será executada
     return round((n * 60)/1000, 0)
 # param(array, preview_value, after_value, new_index)
-def shiffElement(array, preview, after, new):
-    if after == array[new] or preview == array[new]:
+def shiffElement(array:list, position:int, new:int):
+    if array[position] == array[new]:
         return array
     idn = new
     new = array[idn]
 
     array.pop(idn)
 
-    preview = array.index(preview)
-    after = array.index(after)
-
-    aux_prev = array[:preview+1]
-    aux_after = array[after:]
-
-    aux_after.insert(0, new)
-    aux_prev.extend(aux_after)
-
-    return aux_prev
+    array.insert(position, new)
 # get the custo of current solution
-def getCusto(instancia, solution):
+def getCusto(instancia:list, solution:list):
     custo = 0
     tam = len(solution)
     for j in range(tam):
@@ -60,9 +51,8 @@ def getCusto(instancia, solution):
         custo += instancia[solution[j]][solution[k]]
     return int(custo)
  
-def copy(array):
+def copy(array:list):
     cp = []
- 
     for v in array:
         cp.append(v)
     return cp
@@ -101,7 +91,7 @@ for i in range(len(files)):
                 changeNeibor = False
                 for k in range(j, tam):
                     aux = copy(seed)
-                    seed = shiffElement(seed, seed[k - 1], seed[k], j)
+                    shiffElement(seed, k, j)
                     custo = getCusto(instancias[i], seed)
                     if abs(start - time()) > createInterval(tam):
                         timeout = True

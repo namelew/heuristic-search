@@ -1,9 +1,9 @@
 import numpy as np
-from random import randint, shuffle
+from random import shuffle
 from time import time
 import pandas as pd
 class OutputInstancia: # classe par a organizar os dados de saida
-    def __init__(self, name):
+    def __init__(self, name:str):
         self.name = name
         self.solutions = []
         self.time = []
@@ -28,36 +28,27 @@ class OutputInstancia: # classe par a organizar os dados de saida
         return round(sum/tam, 0)
 
 class Tabu:
-    def __init__(self, tabu, tern):
+    def __init__(self, tabu:tuple, tern:int):
         self.tabu = tabu
         self.tern = tern
     def reduce(self):
         self.tern -= 1
     def __str__(self):
         return f"({self.tabu}, {self.tern})"
-def createInterval(n): # retorna por quantos segundos uma instância será executada
+def createInterval(n:int): # retorna por quantos segundos uma instância será executada
     return round((n * 60)/1000, 0)
 # param(array, preview_value, after_value, new_index)
-def shiffElement(array, preview, after, new):
-    if after == array[new] or preview == array[new]:
+def shiffElement(array:list, position:int, new:int):
+    if array[position] == array[new]:
         return array
     idn = new
     new = array[idn]
 
     array.pop(idn)
 
-    preview = array.index(preview)
-    after = array.index(after)
-
-    aux_prev = array[:preview+1]
-    aux_after = array[after:]
-
-    aux_after.insert(0, new)
-    aux_prev.extend(aux_after)
-
-    return aux_prev
+    array.insert(position, new)
 # get the custo of current solution
-def getCusto(instancia, solution):
+def getCusto(instancia:list, solution:list):
     custo = 0
     tam = len(solution)
     for j in range(tam):
@@ -68,19 +59,19 @@ def getCusto(instancia, solution):
         custo += instancia[solution[j]][solution[k]]
     return int(custo)
  
-def copy(array):
+def copy(array:list):
     cp = []
     for v in array:
         cp.append(v)
     return cp
 
-def isTabu(tabus, key):
+def isTabu(tabus:list, key:tuple):
     for tabu in tabus:
         if tabu.tabu[0] == key[0] and tabu.tabu[1] == key[1]:
             return True
     return False
 
-def clipTabu(tabus):
+def clipTabu(tabus:list):
     if len(tabus) == 0:
         return
     
@@ -94,7 +85,7 @@ def clipTabu(tabus):
     while (0 in tabus):
         tabus.remove(0)
 
-def ternure(n):
+def ternure(n:int):
     return round(n/5)
 
 instancias = []
@@ -132,18 +123,18 @@ for i in range(len(files)):
                     if abs(start - time()) > createInterval(tam):
                         timeout = True
                         break
+
+                    aux = copy(seed)
+                    shiffElement(seed, k, j)
+                    custo = getCusto(instancias[i], seed)
+
                     if not isTabu(tabus,(j,k)):
-                        seed = shiffElement(seed, seed[k - 1], seed[k], j)
-                        custo = getCusto(instancias[i], seed)
                         best = custo if custo < best else best
                         changeNeibor = True
                         j = 1
                         tabus.append(Tabu((j,k), ternure(tam)))
                         break
                     else:
-                        aux = copy(seed)
-                        seed = shiffElement(seed, seed[k - 1], seed[k], j)
-                        custo = getCusto(instancias[i], seed)
                         if custo < best:
                             custo_min = custo
                             changeNeibor = True

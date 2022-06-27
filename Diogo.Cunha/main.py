@@ -129,7 +129,6 @@ for i in range(len(files)):
                     custo = getCusto(instancias[i], seed)
 
                     if not isTabu(tabus,(seed[j],seed[k])): # verifica se a troca é ou não um tabu
-                        clipTabu(tabus)
                         current = custo
                         changeNeibor = True
                         tabus.append(Tabu((seed[j],seed[k]), ternure(tam)))
@@ -145,6 +144,7 @@ for i in range(len(files)):
                 if timeout:
                     break
                 if not changeNeibor:
+                    clipTabu(tabus)
                     j += 1
                 else:
                     break

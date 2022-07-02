@@ -1,3 +1,4 @@
+from socket import timeout
 import numpy as np
 from random import randint, shuffle
 from sys import maxsize
@@ -85,9 +86,13 @@ for i in range(len(files)):
   
     for max in range(10):
         start = time()
-        current = glutonSearch(instancias[i], tam)
+        best = maxsize
+        while(abs(start - time()) < createInterval(tam)):
+            current = glutonSearch(instancias[i], tam)
+            if current < best:
+                best = current
         output[i].time.append(abs(start-time()))
-        output[i].solutions.append(current)
+        output[i].solutions.append(best)
 # gera a saída no arquivo resultados.csv
 dist_to_csv = {
     "instancia": [data.name for data in output],

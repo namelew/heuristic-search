@@ -8,7 +8,7 @@ for arg in sys.argv:
         files.append(arg)
 
 for file in files:
-    name = "../Diogo-Cunha/Instâncias-Origin/"+file+".tsp"
+    name = "../Diogo.Cunha/Instâncias-Origin/"+file+".tsp"
     instancia = open(name)
     conjunto = []
     grafo = []
@@ -26,5 +26,5 @@ for file in files:
             node.append(round(dn,0))
         grafo.append(node)
     
-    name = "../Diogo-Cunha/Instâncias/"+file+".bin"
+    name = "../Diogo.Cunha/Instâncias/"+file+".bin"
     np.array(grafo).tofile(name)

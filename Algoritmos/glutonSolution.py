@@ -1,5 +1,5 @@
 import numpy as np
-from random import randint
+from random import choice, randint
 from sys import maxsize
 from time import time
 import pandas as pd
@@ -28,13 +28,13 @@ class OutputInstancia: # classe par a organizar os dados de saida
             sum += solution
         return round(sum/tam, 0)
 
-def createInterval(n:int): # retorna por quantos segundos uma instância será executada
+def createInterval(n:int) -> int: # retorna por quantos segundos uma instância será executada
     return round((n * 60)/1000, 0)
 
 def exploreNode(instancia:list, nodo:int, unvisited:list, tam:int): # explora um nodo escolhido
-    minor_path = 0
-    custo = maxsize
     sample = []
+
+    unvisited.sort(key=lambda x:instancia[nodo][x])
 
     sampleTam = round(tam * 0.3)
 
@@ -42,15 +42,15 @@ def exploreNode(instancia:list, nodo:int, unvisited:list, tam:int): # explora um
         if(len(sample) == sampleTam):
             break
         sample.append(i)
+    
+    drawn = choice(sample)
 
-    for i in sample:
-        if instancia[nodo][i] < custo and i != nodo:
-            custo = instancia[nodo][i]
-            minor_path = i
+    while (drawn == nodo):
+        drawn = choice(sample)
 
-    unvisited.remove(minor_path)
+    unvisited.remove(drawn)
 
-    return custo, minor_path
+    return instancia[nodo][drawn], drawn
 
 def glutonSearch(instancia:list, tam:int): # algoritmo principal da busca gulosa
     unvisited = [i for i in range(tam)] # controla nodos que ainda não foram visitados

@@ -52,18 +52,21 @@ def exploreNode(instancia:list, nodo:int, unvisited:list, tam:int): # explora um
 
     return instancia[nodo][drawn], drawn
 
-def glutonSearch(instancia:list, tam:int): # algoritmo principal da busca gulosa
+def BCCF(instancia:list, tam:int): # algoritmo principal da busca gulosa
     unvisited = [i for i in range(tam)] # controla nodos que ainda não foram visitados
+    solution = []
 
     current = randint(0, tam-1)
     unvisited.remove(current)
+    solution.append(current)
     best = 0
 
     while(len(unvisited) > 0):
         custo,current = exploreNode(instancia, current, unvisited, tam)
+        solution.append(current)
         best += custo
     
-    return best
+    return solution,best
 
 instancias = []
 files = ["Djibouti",  "Qatar",  "Uruguay",  "Zimbabwe", "Western Sahara"]
@@ -86,17 +89,19 @@ for i in range(len(files)):
     for max in range(10):
         start = time()
         best = maxsize
+        bestPath = []
         while(abs(start - time()) < createInterval(tam)):
-            current = glutonSearch(instancias[i], tam)
+            solution,current = BCCF(instancias[i], tam)
             if current < best:
                 best = current
+                bestPath = solution
         output[i].time.append(abs(start-time()))
         output[i].solutions.append(best)
 # gera a saída no arquivo resultados.csv
 dist_to_csv = {
     "instancia": [data.name for data in output],
     "autoria": ["Diogo.Cunha" for i in range(len(output))],
-    "algoritmo": ["BCGα" for i in range(len(output))],
+    "algoritmo": ["BCCF" for i in range(len(output))],
     "q-medio": [int(data.avgQ()) for data in output],
     "q-desvio": [f"{data.dispersionQ():.02f}" for data in output],
     "t-medio": [int(data.avgT()) for data in output]

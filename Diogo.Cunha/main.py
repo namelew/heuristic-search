@@ -31,9 +31,9 @@ class OutputInstancia: # classe par a organizar os dados de saida
 def createInterval(n:int) -> int: # retorna por quantos segundos uma instância será executada
     return round((n * 60)/1000, 0)
 
-def chooseNewNode(pheroTable:list, nodo:int) -> int:
+def chooseNewNode(pheroTable:list, nodo:int, tam:int) -> int: # seleciona a nova cidade baseada em seu feromônio
     pSum = 0
-    for i in range(len(pheroTable)):
+    for i in range(tam):
         pSum += pheroTable[nodo][i]
     
     pRange = 0
@@ -45,6 +45,13 @@ def chooseNewNode(pheroTable:list, nodo:int) -> int:
             return i
         pRange += pV
         i += 1
+    
+    opt = [i for i in range(tam)]
+    opt.remove(nodo)
+
+    drawn = choice(opt)
+
+    return drawn
         
 def exploreNode(instancia:list, nodo:int, pheroTable:list, tam:int): # explora um nodo escolhido
     i = 0
@@ -55,11 +62,11 @@ def exploreNode(instancia:list, nodo:int, pheroTable:list, tam:int): # explora u
                 pheroTable[i][nodo] = tam/distance
         i += 1
     
-    drawn = chooseNewNode(pheroTable, nodo)
+    drawn = chooseNewNode(pheroTable, nodo, tam)
 
     return instancia[nodo][drawn], drawn
 
-def BCCF(instancia:list, pheroTable:list,tam:int): # algoritmo principal da busca gulosa
+def BCCF(instancia:list, pheroTable:list,tam:int): # algoritmo principal da busca por colônia de formigas
     solution = []
 
     current = randint(0, tam-1)
@@ -72,6 +79,20 @@ def BCCF(instancia:list, pheroTable:list,tam:int): # algoritmo principal da busc
         best += custo
     
     return solution,best
+
+def reinforcePhero(pheroTable:list, solution:list, tam:int): # fortalece os feromônios de todos os nodos que aparecem na solução
+    for i in range(tam - 1):
+        pheroTable[solution[i]][solution[i + 1]] = pheroTable[solution[i]][solution[i + 1]] * 1.2
+        pheroTable[solution[i + 1]][solution[i]] = pheroTable[solution[i + 1]][solution[i]] * 1.2
+    pheroTable[solution[i]][solution[0]] = pheroTable[solution[i]][solution[0]] * 1.2
+    pheroTable[solution[0]][solution[i]] = pheroTable[solution[0]][solution[i]] * 1.2 
+
+def diminishPhero(pheroTable:list, solution:list, tam:int): # enfraquece os feromônios
+    for i in range(tam - 1):
+        pheroTable[solution[i]][solution[i + 1]] = pheroTable[solution[i]][solution[i + 1]] * 0.8
+        pheroTable[solution[i + 1]][solution[i]] = pheroTable[solution[i + 1]][solution[i]] * 0.8
+    pheroTable[solution[i]][solution[0]] = pheroTable[solution[i]][solution[0]] * 0.8
+    pheroTable[solution[0]][solution[i]] = pheroTable[solution[0]][solution[i]] * 0.8
 
 instancias = []
 files = ["Djibouti",  "Qatar",  "Uruguay",  "Zimbabwe", "Western Sahara"]
@@ -89,7 +110,7 @@ for file in files: # carregando a matrix de adjacência
 for i in range(len(files)):
     tam = len(instancias[i])
     output.append(OutputInstancia(files[i]))
-    pheroTable = []
+    pheroTable = [] # tabela de mapeamento de feromônios
     for j in range(tam):
         pheroTable.append([0 for k in range(tam)])
     print(f"Starting {output[i].name}")
@@ -101,8 +122,11 @@ for i in range(len(files)):
         while(abs(start - time()) < createInterval(tam)):
             solution,current = BCCF(instancias[i], pheroTable, tam)
             if current < best:
+                reinforcePhero(pheroTable, solution, tam)
                 best = current
                 bestPath = solution
+            else:
+                diminishPhero(pheroTable, solution, tam)
         output[i].time.append(abs(start-time()))
         output[i].solutions.append(best)
 # gera a saída no arquivo resultados.csv

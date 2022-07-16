@@ -3,6 +3,7 @@ from random import choice, randint
 from sys import maxsize
 from time import time
 import pandas as pd
+from math import isinf
 class OutputInstancia: # classe par a organizar os dados de saida
     def __init__(self, name:str):
         self.name = name
@@ -31,50 +32,66 @@ class OutputInstancia: # classe par a organizar os dados de saida
 def createInterval(n:int) -> int: # retorna por quantos segundos uma instância será executada
     return round((n * 60)/1000, 0)
 
-def chooseNewNode(pheroTable:list, nodo:int, tam:int) -> int: # seleciona a nova cidade baseada em seu feromônio
-    pSum = 0
+def chooseNewNode(pheroTable:list, unvisited:set, nodo:int, tam:int) -> int: # seleciona a nova cidade baseada em seu feromônio
+    samples = []
+
     for i in range(tam):
-        pSum += pheroTable[nodo][i]
-    
-    pRange = 0
-    drawn = randint(0, maxsize) % pSum
+        if i in unvisited:
+            samples.append(i)
 
-    i = 0
-    for pV in pheroTable[nodo]:
-        if drawn > pRange and drawn < (pRange + pV):
-            return i
-        pRange += pV
-        i += 1
+    pSum = 0
+    for sample in samples:
+        pSum += pheroTable[nodo][sample]
     
-    opt = [i for i in range(tam)]
-    opt.remove(nodo)
-
+    if pSum != 0:
+        pRange = 0
+        drawn = randint(0, pSum)
+        for sample in samples:
+            if i in unvisited and pRange <= drawn <= (pRange+pheroTable[nodo][sample]):
+                return sample
+            pRange += pheroTable[nodo][sample]
+    opt = []
+    for i in range(tam):
+        if i in unvisited:
+            opt.append(i)
     drawn = choice(opt)
 
     return drawn
-        
-def exploreNode(instancia:list, nodo:int, pheroTable:list, tam:int): # explora um nodo escolhido
+
+def exploreNode(instancia:list, nodo:int, pheroTable:list, unvisited:set, tam:int): # explora um nodo escolhido
     i = 0
     for distance in instancia[nodo]:
-        if i != nodo:
-            if pheroTable[nodo][i] == 0 or pheroTable[i][nodo] == 0: 
-                pheroTable[nodo][i] = tam/distance
-                pheroTable[i][nodo] = tam/distance
+        if i in unvisited:
+            newPhero = pheroTable[nodo][i]/distance
+            if not isinf(newPhero * 1000) or newPhero <= 4000:
+                aux = round(newPhero * 1000, 2)
+                pheroTable[nodo][i] = round(aux)
+                pheroTable[i][nodo] = round(aux)
+            else:
+                pheroTable[nodo][i] = 4000
+                pheroTable[i][nodo] = 4000
         i += 1
     
-    drawn = chooseNewNode(pheroTable, nodo, tam)
+    drawn = chooseNewNode(pheroTable, unvisited, nodo, tam)
+    unvisited.remove(drawn)
 
     return instancia[nodo][drawn], drawn
 
 def BCCF(instancia:list, pheroTable:list,tam:int): # algoritmo principal da busca por colônia de formigas
     solution = []
-
+    unvisited = set()
+    
     current = randint(0, tam-1)
+
+    for i in range(tam):
+        if i != current:
+            unvisited.add(i)
+    
     solution.append(current)
     best = 0
 
-    while(len(solution) < tam):
-        custo,current = exploreNode(instancia, current, pheroTable, tam)
+    while(len(unvisited) > 0):
+        custo,current = exploreNode(instancia, current, pheroTable, unvisited, tam)
         solution.append(current)
         best += custo
     
@@ -85,7 +102,7 @@ def reinforcePhero(pheroTable:list, solution:list, tam:int): # fortalece os fero
         pheroTable[solution[i]][solution[i + 1]] = pheroTable[solution[i]][solution[i + 1]] * 1.2
         pheroTable[solution[i + 1]][solution[i]] = pheroTable[solution[i + 1]][solution[i]] * 1.2
     pheroTable[solution[i]][solution[0]] = pheroTable[solution[i]][solution[0]] * 1.2
-    pheroTable[solution[0]][solution[i]] = pheroTable[solution[0]][solution[i]] * 1.2 
+    pheroTable[solution[0]][solution[i]] = pheroTable[solution[0]][solution[i]] * 1.2
 
 def diminishPhero(pheroTable:list, solution:list, tam:int): # enfraquece os feromônios
     for i in range(tam - 1):
@@ -95,8 +112,8 @@ def diminishPhero(pheroTable:list, solution:list, tam:int): # enfraquece os fero
     pheroTable[solution[0]][solution[i]] = pheroTable[solution[0]][solution[i]] * 0.8
 
 instancias = []
-files = ["Djibouti",  "Qatar",  "Uruguay",  "Zimbabwe", "Western Sahara"]
-li = [38, 194, 734, 929, 29] # tamanho de cada uma das instâncias
+files = ["Western Sahara", "Djibouti",  "Qatar",  "Uruguay", "Zimbabwe"]
+li = [29, 38, 194, 734, 929] # tamanho de cada uma das instâncias
 output = []
 for file in files: # carregando a matrix de adjacência
     array = np.fromfile("Instâncias/"+file+".bin")
@@ -104,7 +121,7 @@ for file in files: # carregando a matrix de adjacência
     pos = files.index(file)
     graph = [[] for i in range(li[pos])]
     for i in range(len(temp)):
-        graph[i%li[pos]].append(temp[i])
+        graph[i%li[pos]].append(round(temp[i]))
     instancias.append(graph)
 # main
 for i in range(len(files)):
@@ -112,9 +129,8 @@ for i in range(len(files)):
     output.append(OutputInstancia(files[i]))
     pheroTable = [] # tabela de mapeamento de feromônios
     for j in range(tam):
-        pheroTable.append([0 for k in range(tam)])
+        pheroTable.append([tam if j != k else 0 for k in range(tam)])
     print(f"Starting {output[i].name}")
-  
     for max in range(10):
         start = time()
         best = maxsize

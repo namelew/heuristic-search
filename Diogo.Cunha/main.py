@@ -1,4 +1,4 @@
-from random import randint, sample,choice
+from random import randint, sample
 import numpy as np
 from time import time
 import pandas as pd
@@ -38,64 +38,6 @@ def generateTamPopulation(n:int) -> int: # se size não for par, arrendonda para
             size+=1
         return size
     return size
-
-def crossoverOperator(inst:list, father:list, mother:list, tam:int, start:int) -> list:
-    son = [-1 for _ in range(tam)]
-    unvisited = set()
-
-    for i in range(tam):
-        unvisited.add(i)
-
-    son[0] = father[start]
-    son[1] = father[start+1]
-    unvisited.remove(father[start])
-    unvisited.remove(father[start+1])
-    
-    for i in range(2, tam):
-        a = (mother.index(son[i-1]) + 1) % tam
-        b = (father.index(son[i-1]) + 1) % tam 
-
-        menor = a
-        if inst[son[i - 1]][b] < inst[son[i - 1]][menor]:
-            menor = b
-        
-        son[i] = menor
-        
-        if son[i] not in unvisited:
-            a = choice(list(unvisited))
-            b = choice(list(unvisited))
-
-            if inst[son[i - 1]][b] < inst[son[i - 1]][menor]:
-                son[i] = b
-            else:
-                son[i] = a
-
-        unvisited.remove(son[i])
- 
-    return son
-
-def AEX(father:list, mother:list, tam:int) -> list:
-  son = [-1 for _ in range(tam)]
-  unvisited = set()
-  for i in range(tam):
-    unvisited.add(i)
-
-  for i in range(2):
-    son[i] = father[i]
-    unvisited.remove(father[i])
-
-  parents = [father, mother]
-  
-  for i in range(2, tam):
-    son[i] = parents[1][(parents[1].index(son[i-1]) + 1) % tam]
-    
-    if son[i] not in unvisited:
-      son[i] = choice(list(unvisited))
-
-    unvisited.remove(son[i])
-    
-    parents.reverse()
-  return son
 
 def CX(father:list, mother:list, tam:int) -> list:
   son = [-1 for _ in range(tam)]
@@ -143,20 +85,15 @@ def getCusto(instancia:list, sample:list, tam: int) -> int:
         custo += instancia[sample[i]][sample[i+1]]
     return custo
 
-def AGHGreX(instancia:list, population:list, tam:int) -> list:
+def AGCX(instancia:list, population:list, tam:int) -> list:
     tp = len(population)
     sons = []
     # selecionando reprodutores
     breeders = sample(range(tp), tp)
     # etapa reprodutiva
     for i in range(int(tp/2)):
-        bst1  = randint(0, tam-3)
-        sons.append(crossoverOperator(instancia, population[breeders[i]], population[breeders[i+1]], tam, bst1))
-
-        bst2  = randint(0, tam-3)
-        while bst2 == bst1:
-            bst2  = randint(0, tam-3)
-        sons.append(crossoverOperator(instancia, population[breeders[i+2]], population[breeders[i+3]], tam, bst2))
+        sons.append(CX(population[breeders[i]], population[breeders[i+1]], tam))
+        sons.append(CX(population[breeders[i+1]], population[breeders[i]], tam))
     
     mutation(sons, tp, tam)
     # seleção natural
@@ -206,7 +143,7 @@ for i in range(len(files)):
         start = time()
         population = initPopulation(tam)
         while(abs(start - time()) < createInterval(tam)):
-            population = AGHGreX(instancias[i], population, tam)
+            population = AGCX(instancias[i], population, tam)
         output[i].time.append(abs(start-time()))
         tempP = []
         for j in range(generateTamPopulation(tam)):
@@ -217,7 +154,7 @@ for i in range(len(files)):
 dist_to_csv = {
     "instancia": [data.name for data in output],
     "autoria": ["Diogo.Cunha" for _ in range(len(output))],
-    "algoritmo": ["AGHGreX" for _ in range(len(output))],
+    "algoritmo": ["AGCX" for _ in range(len(output))],
     "q-medio": [int(data.avgQ()) for data in output],
     "q-desvio": [f"{data.dispersionQ():.02f}" for data in output],
     "t-medio": [int(data.avgT()) for data in output]

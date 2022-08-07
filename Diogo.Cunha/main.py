@@ -130,7 +130,7 @@ for file in files: # carregando a matrix de adjacência
     array = np.fromfile("Instâncias/"+file+".bin")
     temp = array.tolist()
     pos = files.index(file)
-    graph = [[] for i in range(li[pos])]
+    graph = [[] for _ in range(li[pos])]
     for i in range(len(temp)):
         graph[i%li[pos]].append(round(temp[i]))
     instancias.append(graph)
@@ -145,11 +145,11 @@ for i in range(len(files)):
         while(abs(start - time()) < createInterval(tam)):
             population = AGCX(instancias[i], population, tam)
         output[i].time.append(abs(start-time()))
-        tempP = []
-        for j in range(generateTamPopulation(tam)):
-            tempP.append(getCusto(instancias[i], population[j], tam))
-        tempP.sort()
-        output[i].solutions.append(tempP[0])
+        best = getCusto(instancias[i], population[0], tam)
+        for j in range(1, generateTamPopulation(tam)):
+            current = getCusto(instancias[i], population[j], tam)
+            best = current if current < best else best
+        output[i].solutions.append(best)
 # gera a saída no arquivo resultados.csv
 dist_to_csv = {
     "instancia": [data.name for data in output],

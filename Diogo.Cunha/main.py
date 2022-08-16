@@ -102,7 +102,9 @@ def AGCX(instancia:list, population:list, tam:int) -> list:
         tempP.append((getCusto(instancia, population[i], tam), i))
     tempP.sort(key=lambda x:x[0])
 
-    for i in range(round(tp * 0.8)):
+    tss = round(tp * 0.8)
+
+    for i in range(tss):
         tempP.pop()
     
     tempS = []
@@ -110,7 +112,7 @@ def AGCX(instancia:list, population:list, tam:int) -> list:
         tempS.append((getCusto(instancia, sons[i], tam), i))
     tempS.sort(key=lambda x:x[0])
 
-    for i in range(round(tp * 0.2)):
+    for i in range(tp - tss):
         tempS.pop()
     
     new_pop = []

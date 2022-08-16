@@ -28,6 +28,11 @@ class OutputInstancia: # classe par a organizar os dados de saida
             sum += solution
         return round(sum/tam, 0)
 
+class Subject:
+    def __init__(self, path:list, cost:int) -> None:
+        self.path = path
+        self.cust = cost
+
 def createInterval(n:int) -> int: # retorna por quantos segundos uma instância será executada
     return round((n * 180)/1000, 0)
 

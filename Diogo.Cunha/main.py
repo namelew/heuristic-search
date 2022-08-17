@@ -31,7 +31,7 @@ class OutputInstancia: # classe par a organizar os dados de saida
 class Subject:
     def __init__(self, path:list, cost:int) -> None:
         self.path = path
-        self.cust = cost
+        self.cost = cost
 
 def createInterval(n:int) -> int: # retorna por quantos segundos uma instância será executada
     return round((n * 180)/1000, 0)
@@ -44,7 +44,7 @@ def generateTamPopulation(n:int) -> int: # se size não for par, arrendonda para
         return size
     return size
 
-def CX(father:list, mother:list, tam:int) -> list:
+def CX(father:list, mother:list, tam:int) -> Subject:
   son = [-1 for _ in range(tam)]
 
   for i in range(tam):
@@ -61,7 +61,7 @@ def CX(father:list, mother:list, tam:int) -> list:
     if mother[i] not in son:
       son[son.index(-1)] = mother[i]
   
-  return son
+  return Subject(son, 0)
 
 def swap(array:list, a:int, b:int):
     temp = array[a]
@@ -76,12 +76,13 @@ def mutation(sons:list, tam:int, ti:int):
         b = randint(0, ti - 1)
         while b == a:
             b = randint(0, ti - 1)
-        swap(sons[i], a, b)
+        swap(sons[i].path, a, b)
 
-def initPopulation(n:int) ->list:
+def initPopulation(instancia:list, n:int) ->list:
     population = []
     for _ in range(generateTamPopulation(n)):
-        population.append(sample(range(n), n))
+        sub = sample(range(n), n)
+        population.append(Subject(sub, getCusto(instancia, sub, n)))
     return population
 
 def getCusto(instancia:list, sample:list, tam: int) -> int:
@@ -97,34 +98,30 @@ def AGCX(instancia:list, population:list, tam:int) -> list:
     breeders = sample(range(tp), tp)
     # etapa reprodutiva
     for i in range(int(tp/2)):
-        sons.append(CX(population[breeders[i]], population[breeders[i+1]], tam))
-        sons.append(CX(population[breeders[i+1]], population[breeders[i]], tam))
+        sons.append(CX(population[breeders[i]].path, population[breeders[i+1]].path, tam))
+        sons.append(CX(population[breeders[i+1]].path, population[breeders[i]].path, tam))
     
     mutation(sons, tp, tam)
     # seleção natural
-    tempP = []
-    for i in range(tp):
-        tempP.append((getCusto(instancia, population[i], tam), i))
-    tempP.sort(key=lambda x:x[0])
+    population.sort(key=lambda x:x.cost)
 
     tss = round(tp * 0.8)
 
-    for i in range(tss):
-        tempP.pop()
+    for _ in range(tss):
+        population.pop()
     
-    tempS = []
-    for i in range(tp):
-        tempS.append((getCusto(instancia, sons[i], tam), i))
-    tempS.sort(key=lambda x:x[0])
+    for son in sons:
+        son.cost = getCusto(instancia, son.path, tam)
+    sons.sort(key=lambda x:x.cost)
 
-    for i in range(tp - tss):
-        tempS.pop()
+    for _ in range(tp - tss):
+        sons.pop()
     
     new_pop = []
-    for a in tempP:
-        new_pop.append(population[a[1]])
-    for b in tempS:
-        new_pop.append(sons[b[1]])
+    for subject in population:
+        new_pop.append(subject)
+    for son in sons:
+        new_pop.append(son)
     
     return new_pop
 
@@ -148,13 +145,13 @@ for i in range(len(files)):
     print(f"Starting {output[i].name}")
     for max in range(10):
         start = time()
-        population = initPopulation(tam)
+        population = initPopulation(instancias[i], tam)
         while(abs(start - time()) < createInterval(tam)):
             population = AGCX(instancias[i], population, tam)
         output[i].time.append(abs(start-time()))
-        best = getCusto(instancias[i], population[0], tam)
+        best = population[0].cost
         for j in range(1, generateTamPopulation(tam)):
-            current = getCusto(instancias[i], population[j], tam)
+            current = population[j].cost
             best = current if current < best else best
         output[i].solutions.append(best)
 # gera a saída no arquivo resultados.csv

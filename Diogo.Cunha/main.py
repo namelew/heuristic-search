@@ -45,23 +45,25 @@ def generateTamPopulation(n:int) -> int: # se size não for par, arrendonda para
     return size
 
 def CX(father:list, mother:list, tam:int) -> Subject:
-  son = [-1 for _ in range(tam)]
+    son = [-1 for _ in range(tam)]
 
-  for i in range(tam):
-    if father[i] not in son:
-      son[i] = father[i]
-    else:
-      break
-    if mother[i] not in son:
-      son[father.index(mother[i])] = mother[i]
-    else:
-      break
+    for i in range(tam):
+        selected = father[i]
+        if selected not in son:
+            son[i] = selected
+        else:
+            break
+        j = mother.index(selected)
+        if father[j] not in son:
+            son[j] = father[j]
+        else:
+            break
+
+    for i in range(tam):
+        if mother[i] not in son:
+            son[son.index(-1)] = mother[i]
   
-  for i in range(tam):
-    if mother[i] not in son:
-      son[son.index(-1)] = mother[i]
-  
-  return Subject(son, 0)
+    return Subject(son, 0)
 
 def swap(array:list, a:int, b:int):
     temp = array[a]

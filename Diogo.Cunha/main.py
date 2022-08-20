@@ -1,4 +1,4 @@
-from random import randint, sample
+from random import randint, sample, choice
 import numpy as np
 from time import time
 import pandas as pd
@@ -33,8 +33,10 @@ class Subject:
         self.path = path
         self.cost = cost
 
+TIME_LIMIT = 180
+
 def createInterval(n:int) -> int: # retorna por quantos segundos uma instância será executada
-    return round((n * 180)/1000, 0)
+    return round((n * TIME_LIMIT)/1000, 0)
 
 def generateTamPopulation(n:int) -> int: # se size não for par, arrendonda para cima até o par mais próximo
     size = round(n ** 0.5)
@@ -65,10 +67,36 @@ def CX(father:list, mother:list, tam:int) -> Subject:
   
     return Subject(son, 0)
 
+def AEX(father: list, mother: list, tam: int) -> Subject:
+    son = [-1 for _ in range(tam)]
+    unvisited = set()
+    for i in range(tam):
+        unvisited.add(i)
+
+    for i in range(2):
+        son[i] = father[i]
+        unvisited.remove(father[i])
+
+    parents = [father, mother]
+
+    for i in range(2, tam):
+        son[i] = parents[1][(parents[1].index(son[i - 1]) + 1) % tam]
+
+        if son[i] not in unvisited:
+            son[i] = choice(list(unvisited))
+
+        unvisited.remove(son[i])
+
+        parents.reverse()
+    return Subject(son, 0)
+
 def swap(array:list, a:int, b:int):
     temp = array[a]
     array[a] = array[b]
     array[b] = temp
+
+def twoOpt(array:list, a:int, b:int) -> list:
+    return array[:a] + list(reversed(array[a:b + 1])) + array[b + 1:]
 
 def mutation(sons:list, tam:int, ti:int):
     selected = sample(range(tam), round(tam * 0.2))
@@ -79,6 +107,19 @@ def mutation(sons:list, tam:int, ti:int):
         while b == a:
             b = randint(0, ti - 1)
         swap(sons[i].path, a, b)
+
+def mutation_sTwoOpt(sons:list, tam:int, ti:int):
+    selected = sample(range(tam), round(tam * 0.2))
+
+    for i in selected:
+        a = randint(0, ti - 1)
+        b = randint(a, ti - 1)
+        while b == a:
+            b = randint(0, ti - 1)
+        if b - a < 5:
+            swap(sons[i].path, a, b)
+        else:
+            sons[i].path = twoOpt(sons[i].path, a, b)
 
 def initPopulation(instancia:list, n:int) ->list:
     population = []
@@ -93,7 +134,7 @@ def getCusto(instancia:list, sample:list, tam: int) -> int:
         custo += instancia[sample[i]][sample[i+1]]
     return custo
 
-def AGCX(instancia:list, population:list, tam:int) -> list:
+def AGCXsw(instancia:list, population:list, tam:int) -> list:
     tp = len(population)
     sons = []
     # selecionando reprodutores
@@ -127,9 +168,43 @@ def AGCX(instancia:list, population:list, tam:int) -> list:
     
     return new_pop
 
+def AGCXsTwoOpt(instancia:list, population:list, tam:int) -> list:
+    tp = len(population)
+    sons = []
+    # selecionando reprodutores
+    breeders = sample(range(tp), tp)
+    # etapa reprodutiva
+    for i in range(int(tp/2)):
+        sons.append(CX(population[breeders[i]].path, population[breeders[i+1]].path, tam))
+        sons.append(CX(population[breeders[i+1]].path, population[breeders[i]].path, tam))
+    
+    mutation_sTwoOpt(sons, tp, tam)
+    # seleção natural
+    population.sort(key=lambda x:x.cost)
+
+    tss = round(tp * 0.8)
+
+    for _ in range(tss):
+        population.pop()
+    
+    for son in sons:
+        son.cost = getCusto(instancia, son.path, tam)
+    sons.sort(key=lambda x:x.cost)
+
+    for _ in range(tp - tss):
+        sons.pop()
+    
+    new_pop = []
+    for subject in population:
+        new_pop.append(subject)
+    for son in sons:
+        new_pop.append(son)
+    
+    return new_pop
+
 instancias = []
-files = ["Western Sahara", "Djibouti",  "Qatar"]
-li = [29, 38, 194] # tamanho de cada uma das instâncias
+files = ["Western Sahara", "Djibouti",  "Qatar",  "Uruguay", "Zimbabwe"]
+li = [29, 38, 194, 734, 929] # tamanho de cada uma das instâncias
 
 output = []
 for file in files: # carregando a matrix de adjacência
@@ -149,18 +224,19 @@ for i in range(len(files)):
         start = time()
         population = initPopulation(instancias[i], tam)
         while(abs(start - time()) < createInterval(tam)):
-            population = AGCX(instancias[i], population, tam)
+            population = AGCXsTwoOpt(instancias[i], population, tam)
         output[i].time.append(abs(start-time()))
         best = population[0].cost
         for j in range(1, generateTamPopulation(tam)):
             current = population[j].cost
             best = current if current < best else best
+        print(best)
         output[i].solutions.append(best)
 # gera a saída no arquivo resultados.csv
 dist_to_csv = {
     "instancia": [data.name for data in output],
     "autoria": ["Diogo.Cunha" for _ in range(len(output))],
-    "algoritmo": ["AGCX" for _ in range(len(output))],
+    "algoritmo": ["AGCXs2opt" for _ in range(len(output))],
     "q-medio": [int(data.avgQ()) for data in output],
     "q-desvio": [f"{data.dispersionQ():.02f}" for data in output],
     "t-medio": [int(data.avgT()) for data in output]

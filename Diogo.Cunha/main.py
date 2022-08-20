@@ -240,6 +240,44 @@ def AGCAEXsw(instancia:list, population:list, tam:int) -> list:
     
     return new_pop
 
+def AGCAEXsTwoOpt(instancia:list, population:list, tam:int) -> list:
+    tp = len(population)
+    sons = []
+    # selecionando reprodutores
+    breeders = sample(range(tp), tp)
+    # etapa reprodutiva
+    for i in range(int(tp/2)):
+        if tam < 150:
+            sons.append(AEX(population[breeders[i]].path, population[breeders[i+1]].path, tam))
+            sons.append(AEX(population[breeders[i+1]].path, population[breeders[i]].path, tam))
+        else:
+            sons.append(AEX(population[breeders[i]].path, population[breeders[i+1]].path, tam))
+            sons.append(CX(population[breeders[i+1]].path, population[breeders[i]].path, tam))
+    
+    mutation_sTwoOpt(sons, tp, tam)
+    # seleção natural
+    population.sort(key=lambda x:x.cost)
+
+    tss = round(tp * 0.8)
+
+    for _ in range(tss):
+        population.pop()
+    
+    for son in sons:
+        son.cost = getCusto(instancia, son.path, tam)
+    sons.sort(key=lambda x:x.cost)
+
+    for _ in range(tp - tss):
+        sons.pop()
+    
+    new_pop = []
+    for subject in population:
+        new_pop.append(subject)
+    for son in sons:
+        new_pop.append(son)
+    
+    return new_pop
+
 instancias = []
 files = ["Western Sahara", "Djibouti",  "Qatar",  "Uruguay", "Zimbabwe"]
 li = [29, 38, 194, 734, 929] # tamanho de cada uma das instâncias
@@ -262,7 +300,7 @@ for i in range(len(files)):
         start = time()
         population = initPopulation(instancias[i], tam)
         while(abs(start - time()) < createInterval(tam)):
-            population = AGCAEXsw(instancias[i], population, tam)
+            population = AGCAEXsTwoOpt(instancias[i], population, tam)
         output[i].time.append(abs(start-time()))
         best = population[0].cost
         for j in range(1, generateTamPopulation(tam)):
@@ -274,7 +312,7 @@ for i in range(len(files)):
 dist_to_csv = {
     "instancia": [data.name for data in output],
     "autoria": ["Diogo.Cunha" for _ in range(len(output))],
-    "algoritmo": ["AGCAEXsw" for _ in range(len(output))],
+    "algoritmo": ["AGCAEXs2opt" for _ in range(len(output))],
     "q-medio": [int(data.avgQ()) for data in output],
     "q-desvio": [f"{data.dispersionQ():.02f}" for data in output],
     "t-medio": [int(data.avgT()) for data in output]

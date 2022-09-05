@@ -104,8 +104,7 @@ def mutation(sons:list, tam:int, ti:int):
     for i in selected:
         a = randint(0, ti - 1)
         b = randint(0, ti - 1)
-        while b == a:
-            b = randint(0, ti - 1)
+        b = b if a != b else (b + 1)%tam
         swap(sons[i].path, a, b)
 
 def mutation_sTwoOpt(sons:list, tam:int, ti:int):
@@ -114,8 +113,7 @@ def mutation_sTwoOpt(sons:list, tam:int, ti:int):
     for i in selected:
         a = randint(0, ti - 1)
         b = randint(a, ti - 1)
-        while b == a:
-            b = randint(0, ti - 1)
+        b = b if a != b else (b + 1)%tam
         if b - a < 5:
             swap(sons[i].path, a, b)
         else:
